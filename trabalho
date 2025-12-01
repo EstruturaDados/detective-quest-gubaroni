@@ -1,0 +1,181 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Definição do tamanho máximo para o nome da sala
+#define TAMANHO_NOME 50
+
+// --- Estrutura de Dados ---
+
+/**
+ * @brief Estrutura que representa um cômodo (nó) da mansão.
+ * Contém o nome da sala e ponteiros para os caminhos possíveis.
+ */
+typedef struct Sala {
+    char nome[TAMANHO_NOME];
+    struct Sala *esquerda; // Ponteiro para o caminho da esquerda
+    struct Sala *direita;  // Ponteiro para o caminho da direita
+} Sala;
+
+// --- Funções de Modularização ---
+
+/**
+ * @brief Cria e aloca dinamicamente um novo cômodo (nó) na árvore.
+ * @param nome_sala O nome a ser atribuído ao novo cômodo.
+ * @return O ponteiro para a nova Sala criada.
+ */
+Sala* criarSala(const char *nome_sala) {
+    // 1. Aloca memória para a nova sala
+    Sala *nova_sala = (Sala*)malloc(sizeof(Sala));
+    
+    // 2. Verifica se a alocação foi bem-sucedida
+    if (nova_sala == NULL) {
+        perror("Erro na alocação de memória para nova sala");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 3. Inicializa os campos
+    strncpy(nova_sala->nome, nome_sala, TAMANHO_NOME - 1);
+    nova_sala->nome[TAMANHO_NOME - 1] = '\0'; // Garantir terminação da string
+    nova_sala->esquerda = NULL;
+    nova_sala->direita = NULL;
+    
+    return nova_sala;
+}
+
+/**
+ * @brief Permite a navegação interativa do jogador pela árvore binária.
+ * A exploração continua até o nó-folha ou até o jogador desistir.
+ * @param atual O ponteiro para a sala atual onde o jogador se encontra.
+ */
+void explorarSalas(Sala *atual) {
+    char escolha;
+    
+    // O loop continua enquanto houver uma sala para explorar
+    while (atual != NULL) {
+        printf("\nVocê está em: **%s**\n", atual->nome);
+
+        // Verifica se é um nó-folha (sem caminhos)
+        if (atual->esquerda == NULL && atual->direita == NULL) {
+            printf("\n🎉 Fim da exploração! Este cômodo não tem mais saídas. 🎉\n");
+            return; // Encerra a exploração
+        }
+
+        // --- Opções de Navegação ---
+        printf("Para onde deseja ir?\n");
+        
+        if (atual->esquerda != NULL) {
+            printf("  [e] -> Esquerda (%s)\n", atual->esquerda->nome);
+        }
+        if (atual->direita != NULL) {
+            printf("  [d] -> Direita (%s)\n", atual->direita->nome);
+        }
+        printf("  [s] -> Sair da mansão\n");
+        printf("Escolha (e/d/s): ");
+
+        // Leitura da escolha do usuário
+        if (scanf(" %c", &escolha) != 1) {
+            // Limpa o buffer de entrada em caso de falha de leitura
+            while(getchar() != '\n'); 
+            escolha = ' '; // Define uma escolha inválida
+        }
+        
+        // --- Processamento da Escolha ---
+        if (escolha == 'e' || escolha == 'E') {
+            if (atual->esquerda != NULL) {
+                atual = atual->esquerda; // Move para a esquerda
+            } else {
+                printf("Caminho 'esquerda' não existe. Tente outra opção.\n");
+            }
+        } else if (escolha == 'd' || escolha == 'D') {
+            if (atual->direita != NULL) {
+                atual = atual->direita; // Move para a direita
+            } else {
+                printf("Caminho 'direita' não existe. Tente outra opção.\n");
+            }
+        } else if (escolha == 's' || escolha == 'S') {
+            printf("\n🚪 Você decidiu sair da mansão. Até logo!\n");
+            return;
+        } else {
+            printf("Opção inválida. Digite 'e', 'd' ou 's'.\n");
+        }
+    }
+}
+
+/**
+ * @brief Libera a memória alocada para toda a árvore.
+ * @param raiz O ponteiro para a raiz da subárvore a ser liberada.
+ */
+void liberarMemoria(Sala *raiz) {
+    if (raiz == NULL) {
+        return;
+    }
+    // Liberação em Pós-ordem (Post-order traversal)
+    liberarMemoria(raiz->esquerda);
+    liberarMemoria(raiz->direita);
+    free(raiz);
+}
+
+// --- Função Principal ---
+
+int main() {
+    printf("======================================\n");
+    printf("🚪 Bem-vindo à Mansão do Código Secreto! 🗝️\n");
+    printf("======================================\n");
+    printf("Regra: Escolha 'e' (esquerda) ou 'd' (direita) para avançar.\n");
+
+    // --- Montagem do Mapa da Mansão (Criação Manual da Árvore Binária) ---
+    // A estrutura é criada de forma manual conforme o requisito.
+    
+    // Nível 0: Raiz
+    Sala *hall = criarSala("Hall de Entrada");
+
+    // Nível 1
+    Sala *sala_estar = criarSala("Sala de Estar");
+    Sala *cozinha = criarSala("Cozinha");
+    hall->esquerda = sala_estar;
+    hall->direita = cozinha;
+
+    // Nível 2 (Filhos da Sala de Estar)
+    Sala *biblioteca = criarSala("Biblioteca");
+    Sala *jardim = criarSala("Jardim"); // Nó-folha
+    sala_estar->esquerda = biblioteca;
+    sala_estar->direita = jardim;
+
+    // Nível 2 (Filhos da Cozinha)
+    Sala *dispensa = criarSala("Dispensa"); // Nó-folha
+    Sala *escritorio = criarSala("Escritório");
+    cozinha->esquerda = dispensa;
+    cozinha->direita = escritorio;
+
+    // Nível 3 (Filhos da Biblioteca)
+    Sala *quarto_principal = criarSala("Quarto Principal"); // Nó-folha
+    biblioteca->esquerda = quarto_principal;
+    // Biblioteca->direita é NULL
+
+    // Nível 3 (Filhos do Escritório)
+    Sala *porao = criarSala("Porão"); // Nó-folha
+    escritorio->direita = porao;
+    // Escritorio->esquerda é NULL
+
+    /*
+     * Estrutura da Árvore (Mapa da Mansão):
+     * * (Hall de Entrada)
+     * /                 \
+     * (Sala de Estar)           (Cozinha)
+     * /      \               /      \
+     * (Biblioteca) (Jardim)  (Dispensa) (Escritório)
+     * /         (Folha)    (Folha)        \
+     * (Quarto Principal)                    (Porão)
+     * (Folha)                          (Folha)
+     */
+     
+    // --- Início da Exploração Interativa ---
+    explorarSalas(hall);
+    
+    // --- Limpeza de Memória ---
+    liberarMemoria(hall);
+    printf("\n\nMemória alocada liberada com sucesso.\n");
+
+    return 0;
+}
